@@ -1,60 +1,116 @@
 # Resume Genie
 
-A local-first resume builder. Answer an Ollama-powered interview, generate an editable draft, and download it as PDF or DOCX. Review the draft carefully: language models can make mistakes even when instructed not to invent details.
+Resume Genie helps you create or improve a resume without starting from a blank page. Chat about your experience or import an existing CV, then review, edit, and export the result. It uses Ollama so you can run the AI model locally.
 
-## Requirements
+## Features
+
+- **Create through chat:** share your background and ask the assistant to generate a resume.
+- **Import a CV:** upload an existing text-based PDF to create an editable draft without answering interview questions.
+- **Update and edit:** ask for changes in chat or use the editor for contact details, experience, education, skills, projects, and other sections. Experience, education, and skills support repeatable structured entries as well as free text.
+- **Preview and choose a design:** select Classic, AltaCV, CV Classic, CV Modern, or CV Two-column, or ask the assistant to suggest a template.
+- **Export:** download your resume as PDF or DOCX. Both include a name and page-number footer.
+- **Regenerate or start fresh:** regenerate from the conversation or imported CV, or use **New chat** to clear the current draft and conversation.
+
+## Tech stack
+
+- **Frontend:** React, Vite, and Lucide icons
+- **Backend:** Python, FastAPI, and Pydantic
+- **AI:** Ollama
+- **Documents:** pypdf for PDF import; ReportLab, python-docx, and Tectonic/LaTeX for exports
+
+## Getting started
+
+### Requirements
 
 - Python 3.10+ and Node.js 20.19+ or 22.12+
-- [Ollama](https://ollama.com/) running locally
-- A TrueType font for PDF export. macOS Arial Unicode and Linux DejaVu Sans are detected automatically; otherwise set `RESUME_PDF_FONT` to a Unicode `.ttf` file.
-- For AltaCV and LaTeX CV PDF exports, [Tectonic](https://tectonic-typesetting.github.io/) on `PATH` (on macOS, `brew install tectonic`). Tectonic downloads and caches TeX packages from its configured bundle on first use; this requires an internet connection and can take several minutes.
+- [Ollama](https://ollama.com/) running with a model installed
+- A Unicode TrueType font for Classic PDF export. macOS Arial Unicode and Linux DejaVu Sans are detected automatically; otherwise set `RESUME_PDF_FONT` to a `.ttf` file. Windows setup is shown below.
+- [Tectonic](https://tectonic-typesetting.github.io/) on `PATH` for AltaCV and LaTeX CV PDF exports. Its first run may download TeX packages.
 
-## Run locally
+### Install and run on macOS or Linux
 
-First-time setup, from this directory:
+Start Ollama, then run these commands from the project directory:
 
 ```sh
-ollama pull qwen2.5:14b  # skip if already installed
+ollama pull qwen2.5:14b
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 npm install
-```
-
-Start Ollama, then launch both servers from one terminal:
-
-```sh
 ./start.sh
 ```
 
-Open http://127.0.0.1:5173. Keep the terminal and Ollama running; press Ctrl+C in the terminal to stop both app servers. The script checks dependencies and Ollama but does not install or start them. It requires ports 8000 and 5173 to be free.
+Open http://127.0.0.1:5173. Keep the terminal open; press Ctrl+C to stop the app. Ports 5173 and 8000 must be available.
 
-Answer the assistant's questions, then tell it **“generate my resume”** when you are ready, or confirm when it offers to generate it. Your resume will appear in the preview. Use **Edit** to correct it and **Export** to download PDF or DOCX. Include the actual details in your answers rather than just saying "yes": drafting uses only your messages to avoid mistaking the assistant's suggestions for facts. Regenerating a resume replaces edits only after confirmation; if generation fails, ask the assistant to try again.
+### Install and run on Windows
 
-Use **Import existing PDF** to extract text locally and generate an editable draft using the selected Ollama model. No chat answers are required, and earlier chat messages are not used in the imported draft. You can edit and export it immediately, or optionally add information in the chat afterward. Regeneration uses the imported PDF and subsequent chat messages, not earlier messages; it replaces manual edits after confirmation. Import supports text-based PDFs up to 10 MB and 20 pages; password-protected and scanned/image-only files are not supported (OCR is not included). Importing replaces an existing draft only after confirmation and successful generation. Always verify extracted details. The editor supports separate contact fields, repeatable experience and education entries, categorized skills, leadership, awards, and certifications. Free-text fields remain available for other details; avoid repeating the same information in both forms. Exported documents include a name and page-number footer; DOCX page counts update when opened in a word processor.
+Start Ollama, then open PowerShell in the project directory:
 
-Experience entries are separated by a blank line. In free-text experience, blank lines are preserved and common “role — employer” headings followed by a client or date are separated automatically. For other formats, add a blank line between companies in the editor.
+```powershell
+ollama pull qwen2.5:14b
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+npm.cmd install
+```
 
-Passport number, passport validity, hobbies and other personal details are optional and appear under **Personal Information**, below Awards. Passport numbers are sensitive: include them only when needed and be careful where you share exported resumes. You can ask the assistant to update any resume detail in your own words, including additional information such as a favorite book, or make changes in **Edit**. Review all updates in the preview before exporting. When importing a PDF, check and remove any passport details you do not wish to export. The configured Ollama server receives the information you provide; a remote `OLLAMA_URL` sends it off your device.
+In the same PowerShell window, set a font for Classic PDF export and start the backend:
 
-Choose a template using the design buttons above the preview. Before a draft is created, the preview displays sample text. The available options include Classic, AltaCV, and LaTeX CV Classic, Modern, and Two-column. After creating a draft, choose **Suggest for me** to ask the selected Ollama model to recommend a template based on your answers and draft; you can always select another. Mention any style preferences in your answers. The preview and DOCX are approximations, not identical LaTeX renders; inspect the downloaded document for final formatting. The LaTeX templates require Tectonic for PDF generation.
+```powershell
+$env:RESUME_PDF_FONT = "$env:WINDIR\Fonts\arial.ttf"
+.\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
 
-The AltaCV class is by LianTze Lim, sourced from [AltaCV](https://github.com/liantze/AltaCV/tree/91373530c55843533a4de12a29d28896f9b14c0d) and distributed under the [LaTeX Project Public License 1.3 or later](backend/vendor/altacv/LICENSE.md). LaTeX CV Classic, Modern and Two-column use adapted preambles from [Jan Küster's latexcv collection](https://github.com/jankapunkt/latexcv/tree/c4284b2ac9d20ba751e272fc805bb00accc6f1a8), under the [MIT license](backend/vendor/latexcv/LICENSE); their sample contents are not used in generated resumes. These are selected adaptations, not the entire collection.
+Open a second PowerShell window in the project directory and start the frontend:
 
-Your conversation and draft are kept only in the open browser tab and are lost on refresh or when you start over. Requests and exports go through the local Python server to local Ollama; no account or external AI service is required. For LaTeX-based templates, the resume is temporarily written to a local temporary directory and removed after compilation; Tectonic may access the internet to fetch TeX packages. Avoid exposing the development servers to the network: they are intended for a single local user and have no authentication.
+```powershell
+npm.cmd run dev -- --port 5173 --strictPort
+```
 
-## Model choice
+Open http://127.0.0.1:5173. Keep both windows open and press Ctrl+C in each to stop the servers. Ports 5173 and 8000 must be available. The `start.sh` script is for macOS/Linux; Windows uses the two commands above.
 
-Of the models already installed, **`qwen2.5:14b` is the recommended starting point**: it is an instruction-following model with documented structured JSON support, useful for the interview and resume extraction. It is larger and may respond more slowly than `llama3:latest`; select the latter in the model field if speed or memory is more important, and compare the results on your own experience. `nomic-embed-text` is an embedding model, not a conversational model, so it is not suitable for this task. There is no universally best model; quality and performance depend on your hardware and inputs.
+### Configure Ollama
 
-Set `OLLAMA_MODEL` before starting the backend to change the default, or edit the model name in the UI. Set `OLLAMA_URL` to change the Ollama server URL (default `http://127.0.0.1:11434`); using a remote URL sends your resume data to that server.
+The default model is `qwen2.5:14b`. To choose another installed model for the current session, enter its name in the **Model** field beside the chat. To change the default or connect to a different Ollama server, set environment variables before starting:
 
-Sources: [Qwen2.5 on Ollama](https://ollama.com/library/qwen2.5), [Ollama structured outputs](https://docs.ollama.com/capabilities/structured-outputs), [nomic-embed-text on Ollama](https://ollama.com/library/nomic-embed-text).
-
-## Verify
+On macOS/Linux:
 
 ```sh
-python -m unittest discover -s backend/tests
-npm run build
+OLLAMA_MODEL=llama3:latest OLLAMA_URL=http://127.0.0.1:11434 ./start.sh
 ```
-# ResumeBuilder
+
+On Windows, set these in the PowerShell window **before starting the backend**:
+
+```powershell
+$env:OLLAMA_MODEL = "llama3:latest"
+$env:OLLAMA_URL = "http://127.0.0.1:11434"
+```
+
+Pull the chosen model first, for example `ollama pull llama3:latest`. Model quality and speed depend on your hardware and the model.
+
+## How to use
+
+### Create a resume through chat
+
+1. Tell the assistant about your experience, education, skills, and the role you want.
+2. Say **“generate my resume”** when ready, or confirm the assistant's offer to generate it.
+3. Review the draft, then request changes in chat or use **Edit**.
+
+### Upload an existing CV
+
+1. Select **Import existing PDF** and choose your CV.
+2. Review the generated draft in **Preview** or **Edit**; chat is optional.
+3. Add details through chat or edit the fields directly.
+
+Import accepts text-based PDFs up to 10 MB and 20 pages. Scanned, image-only, and password-protected PDFs are not supported. Importing or regenerating replaces an existing draft only after confirmation and successful generation.
+
+### Finish and export
+
+Choose a template, optionally use **Suggest for me**, and select **Export** to download a PDF or DOCX. The preview and DOCX approximate the selected design; inspect the exported document before sharing. Experience entries have a blank line between companies; in free text, add a blank line where automatic separation does not apply.
+
+## Privacy and limitations
+
+The conversation and draft are kept in the current browser tab and are lost on refresh or **New chat**. The app has no authentication and is intended for local use. Resume data is sent to the configured Ollama server, so a remote `OLLAMA_URL` sends it off your device. Review AI-generated content for accuracy and include sensitive personal details only when needed.
+
+## Template credits
+
+AltaCV uses [AltaCV](https://github.com/liantze/AltaCV/tree/91373530c55843533a4de12a29d28896f9b14c0d) by LianTze Lim ([LPPL 1.3 or later](backend/vendor/altacv/LICENSE.md)). The LaTeX CV templates use adapted preambles from [latexcv](https://github.com/jankapunkt/latexcv/tree/c4284b2ac9d20ba751e272fc805bb00accc6f1a8) by Jan Küster ([MIT license](backend/vendor/latexcv/LICENSE)).
